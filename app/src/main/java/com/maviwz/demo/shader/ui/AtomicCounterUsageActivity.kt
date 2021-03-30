@@ -9,9 +9,11 @@ import android.util.Log
 import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
+import com.maviwz.demo.shader.App
 import com.maviwz.demo.shader.gles.EglCore
 import com.maviwz.demo.shader.gles.GlUtil
 import com.maviwz.demo.shader.gles.OffscreenSurface
+import com.maviwz.demo.shader.utils.AssetsUtil
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
@@ -44,25 +46,6 @@ class AtomicCounterUsageActivity : AppCompatActivity() {
 
         private var width = 200
         private var height = 200
-
-        private val VERTEC_SHADER =
-            "#version 310 es\n" +
-            "in vec4 aPosition;\n" +
-            "void main() {\n" +
-            "    gl_Position = aPosition;\n" +
-            "}"
-        private val FRAGMENT_SHADER =
-            "#version 310 es\n" +
-            "precision highp float;\n" +
-            "out vec4 gl_FragColor;\n" +
-            "layout(binding=0, offset=0) uniform atomic_uint ac;\n" +
-            "void main() {\n" +
-            "    vec3 col = vec3(0.);\n" +
-            "    uint counter = atomicCounterIncrement(ac);\n" +
-            "    float r = float(counter)/float(${width * height});\n" +
-            "    col.r += r;\n" +
-            "    gl_FragColor = vec4(col, 1.);\n" +
-            "}"
         private var acBuffer = 0
         private var program = 0
 
@@ -94,9 +77,11 @@ class AtomicCounterUsageActivity : AppCompatActivity() {
             // create program
             program = GLES31.glCreateProgram()
             // compile shader
-            val v = GlUtil.loadShader(GLES31.GL_VERTEX_SHADER, VERTEC_SHADER)
+            val v = GlUtil.loadShader(GLES31.GL_VERTEX_SHADER,
+                AssetsUtil.loadShaderString(App.context, "atomic/v.glsl"))
             GlUtil.checkGlError("compile vertex shader")
-            val f = GlUtil.loadShader(GLES31.GL_FRAGMENT_SHADER, FRAGMENT_SHADER)
+            val f = GlUtil.loadShader(GLES31.GL_FRAGMENT_SHADER,
+                AssetsUtil.loadShaderString(App.context, "atomic/f.glsl"))
             GlUtil.checkGlError("compile fragment shader")
             // attach shader
             GLES31.glAttachShader(program, v)
@@ -119,6 +104,9 @@ class AtomicCounterUsageActivity : AppCompatActivity() {
                 aPositionHandle, 3,
                 GLES31.GL_FLOAT, false, 3 * 4, vertexBuffer
             )
+            // uResolution
+            val uResolution = GLES31.glGetUniformLocation(program, "uResolution")
+            GLES31.glUniform2f(uResolution, width.toFloat(), height.toFloat())
             // bind atomic counter
             GLES31.glBindBufferBase(GLES31.GL_ATOMIC_COUNTER_BUFFER, 0, acBuffer)
             // draw the rect
