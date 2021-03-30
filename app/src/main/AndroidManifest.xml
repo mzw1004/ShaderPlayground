@@ -17,6 +17,7 @@
             </intent-filter>
         </activity>
         <activity android:name=".ui.ComputeShaderActivity" />
+        <activity android:name=".ui.AtomicCounterUsageActivity" />
     </application>
 
 </manifest>

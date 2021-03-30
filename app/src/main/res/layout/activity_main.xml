@@ -9,6 +9,12 @@
     <Button
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:text="Atomic Counter Usage"
+        android:onClick="gotoAtomicCounter" />
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:text="Compute Shader Demo"
         android:onClick="gotoComputeShader" />
 </LinearLayout>

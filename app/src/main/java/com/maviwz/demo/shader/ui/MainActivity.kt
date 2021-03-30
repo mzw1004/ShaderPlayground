@@ -24,4 +24,10 @@ class MainActivity : AppCompatActivity() {
             startActivity(this)
         }
     }
+
+    fun gotoAtomicCounter(view: View) {
+        Intent(this, AtomicCounterUsageActivity::class.java).apply {
+            startActivity(this)
+        }
+    }
 }
