@@ -94,9 +94,9 @@ class AtomicCounterUsageActivity : AppCompatActivity() {
             // create program
             program = GLES31.glCreateProgram()
             // compile shader
-            val v = GlUtil.compileShader(GLES31.GL_VERTEX_SHADER, VERTEC_SHADER)
+            val v = GlUtil.loadShader(GLES31.GL_VERTEX_SHADER, VERTEC_SHADER)
             GlUtil.checkGlError("compile vertex shader")
-            val f = GlUtil.compileShader(GLES31.GL_FRAGMENT_SHADER, FRAGMENT_SHADER)
+            val f = GlUtil.loadShader(GLES31.GL_FRAGMENT_SHADER, FRAGMENT_SHADER)
             GlUtil.checkGlError("compile fragment shader")
             // attach shader
             GLES31.glAttachShader(program, v)
