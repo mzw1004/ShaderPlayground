@@ -44,8 +44,8 @@ class AtomicCounterUsageActivity : AppCompatActivity() {
 
     private inner class RenderThread : Thread() {
 
-        private var width = 200
-        private var height = 200
+        private var width = 1080
+        private var height = 1930
         private var acBuffer = 0
         private var program = 0
 
