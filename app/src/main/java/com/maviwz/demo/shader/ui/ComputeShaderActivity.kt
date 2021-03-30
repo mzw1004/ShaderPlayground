@@ -1,6 +1,7 @@
 package com.maviwz.demo.shader.ui
 
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.opengl.GLES31
 import android.os.Bundle
 import android.os.Handler
@@ -9,9 +10,12 @@ import android.util.Log
 import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
+import com.maviwz.demo.shader.App
+import com.maviwz.demo.shader.R
 import com.maviwz.demo.shader.gles.EglCore
 import com.maviwz.demo.shader.gles.GlUtil
 import com.maviwz.demo.shader.gles.OffscreenSurface
+import com.maviwz.demo.shader.utils.AssetsUtil
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
@@ -37,46 +41,14 @@ class ComputeShaderActivity : AppCompatActivity() {
                 )
             )
         }
-        ivPreview?.scaleY = -1f
-        ComputeThread().start()
+        val bmp = BitmapFactory.decodeResource(resources, R.drawable.pic_compute_test)
+        Log.d(GlUtil.TAG, "bmp size: width=${bmp.width}, height=${bmp.height}")
+        ivPreview?.setImageBitmap(bmp)
+        ComputeThread(bmp).start()
     }
 
-    private inner class ComputeThread : Thread("ComputeThread") {
+    private inner class ComputeThread(val bmp: Bitmap) : Thread("ComputeThread") {
 
-        private val COMPUTE_SHADER =
-            "#version 310 es\n" +
-            "layout (local_size_x = 20, local_size_y = 20, local_size_z = 1) in;\n" +
-//                "layout(binding = 0, rgba32f) readonly uniform highp image2D input_image;\n" +
-            "layout(binding = 0, rgba32f) writeonly uniform highp image2D output_image;\n" +
-            "layout(binding = 1, offset = 0) uniform atomic_uint ac;\n" +
-            "void main(void) {\n" +
-            "    ivec2 pos = ivec2(gl_GlobalInvocationID.xy);\n" +
-            "    vec4 col = vec4(0.0, 0.0, 0.0, 1.);\n" +
-            "    col.r += float(pos.x) / 100.;\n" +
-            "    col.g += float(pos.y) / 100.;\n" +
-            "    uint previous = atomicCounterIncrement(ac);\n" +
-            "    imageStore(output_image, pos.xy, col);\n" +
-            "}"
-        private val VERTEC_SHADER =
-            "#version 310 es\n" +
-            "in vec4 aPosition;\n" +
-            "void main() {\n" +
-            "    gl_Position = aPosition;\n" +
-            "}"
-        private val FRAGMENT_SHADER =
-            "#version 310 es\n" +
-            "precision mediump float;\n" +
-            "out vec4 gl_FragColor;\n" +
-            "layout(binding=0, offset=0) uniform atomic_uint ac;\n" +
-            "void main() {\n" +
-            "    vec3 col = vec3(0.);\n" +
-            "    uint counter = atomicCounterIncrement(ac);\n" +
-            "    float r = float(counter)/10000.;\n" +
-            "    col.r += r;\n" +
-            "    gl_FragColor = vec4(col, 1.);\n" +
-            "}"
-        private var outputFbo = 0
-        private var outputTexture = 0
         private var acBuffer = 0
         private val width = 100
         private val height = 100
@@ -94,9 +66,9 @@ class ComputeShaderActivity : AppCompatActivity() {
                 )
                 surface.makeCurrent()
                 GlUtil.logVersionInfo()
-                createOutputFBO()
+                createSrcTexture()
                 createAtomicCounterBuffer()
-//                runComputeTest()
+                runComputeTest()
                 runRenderTest()
                 // read result
                 readResult()
@@ -115,7 +87,7 @@ class ComputeShaderActivity : AppCompatActivity() {
             // create program
             val program = GLES31.glCreateProgram()
             // compile shader
-            val shader = GlUtil.loadShader(GLES31.GL_COMPUTE_SHADER, COMPUTE_SHADER)
+            val shader = GlUtil.loadShader(GLES31.GL_COMPUTE_SHADER, AssetsUtil.loadShaderString(App.context, "compute/main.glsl"))
             // attach shader
             GLES31.glAttachShader(program, shader)
             // link
@@ -123,7 +95,6 @@ class ComputeShaderActivity : AppCompatActivity() {
             // use program
             GLES31.glUseProgram(program)
             GLES31.glBindBufferBase(GLES31.GL_ATOMIC_COUNTER_BUFFER, 1, acBuffer)
-            GLES31.glBindImageTexture(0, outputTexture, 0, false, 0, GLES31.GL_WRITE_ONLY, GLES31.GL_RGBA32F)
             GLES31.glDispatchCompute(5, 5, 1)
             // end program
             GLES31.glBindBufferBase(GLES31.GL_ATOMIC_COUNTER_BUFFER, 1, 0)
@@ -136,9 +107,9 @@ class ComputeShaderActivity : AppCompatActivity() {
             // create program
             val program = GLES31.glCreateProgram()
             // compile shader
-            val v = GlUtil.loadShader(GLES31.GL_VERTEX_SHADER, VERTEC_SHADER)
+            val v = GlUtil.loadShader(GLES31.GL_VERTEX_SHADER, AssetsUtil.loadShaderString(App.context, "compute/v.glsl"))
             GlUtil.checkGlError("compile vertex shader")
-            val f = GlUtil.loadShader(GLES31.GL_FRAGMENT_SHADER, FRAGMENT_SHADER)
+            val f = GlUtil.loadShader(GLES31.GL_FRAGMENT_SHADER, AssetsUtil.loadShaderString(App.context, "compute/f.glsl"))
             GlUtil.checkGlError("compile fragment shader")
             // attach shader
             GLES31.glAttachShader(program, v)
@@ -176,26 +147,8 @@ class ComputeShaderActivity : AppCompatActivity() {
             GLES31.glUseProgram(0)
         }
 
-        private fun createOutputFBO() {
-            val fbo = intArrayOf(1)
-            val texture = intArrayOf(1)
-            // create frame buffer
-            GLES31.glGenFramebuffers(1, fbo, 0)
-            GLES31.glBindFramebuffer(GLES31.GL_FRAMEBUFFER, fbo[0])
-            outputFbo = fbo[0]
-            // create texture
-            GLES31.glGenTextures(1, texture, 0)
-            GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, texture[0])
-            GLES31.glTexStorage2D(GLES31.GL_TEXTURE_2D, 1, GLES31.GL_RGBA32F, width, height)
-            GLES31.glTexParameteri(GLES31.GL_TEXTURE_2D, GLES31.GL_TEXTURE_MIN_FILTER, GLES31.GL_LINEAR)
-            GLES31.glTexParameteri(GLES31.GL_TEXTURE_2D, GLES31.GL_TEXTURE_MAG_FILTER, GLES31.GL_LINEAR)
-            GLES31.glTexParameteri(GLES31.GL_TEXTURE_2D, GLES31.GL_TEXTURE_WRAP_S, GLES31.GL_CLAMP_TO_EDGE)
-            GLES31.glTexParameteri(GLES31.GL_TEXTURE_2D, GLES31.GL_TEXTURE_WRAP_T, GLES31.GL_CLAMP_TO_EDGE)
-            GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, 0)
-            outputTexture = texture[0]
-            // bind texture
-            GLES31.glFramebufferTexture2D(GLES31.GL_FRAMEBUFFER, GLES31.GL_COLOR_ATTACHMENT0, GLES31.GL_TEXTURE_2D, texture[0], 0)
-            GLES31.glBindFramebuffer(GLES31.GL_FRAMEBUFFER, 0)
+        private fun createSrcTexture() {
+
         }
 
         private fun createAtomicCounterBuffer() {
@@ -217,9 +170,9 @@ class ComputeShaderActivity : AppCompatActivity() {
             val bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).apply {
                 copyPixelsFromBuffer(buf)
             }
-            uiHandler.post {
-                ivPreview?.setImageBitmap(bmp)
-            }
+//            uiHandler.post {
+//                ivPreview?.setImageBitmap(bmp)
+//            }
         }
     }
 }
