@@ -41,7 +41,12 @@ class ComputeShaderActivity : AppCompatActivity() {
                 )
             )
         }
-        val bmp = BitmapFactory.decodeResource(resources, R.drawable.pic_compute_test)
+        var bmp = BitmapFactory.decodeResource(resources, R.drawable.pic_compute_test)
+        // resize bmp
+        val targetSize = 100
+        val resizeBmp = Bitmap.createScaledBitmap(bmp, targetSize, targetSize, false)
+        bmp.recycle()
+        bmp = resizeBmp
         Log.d(GlUtil.TAG, "bmp size: width=${bmp.width}, height=${bmp.height}")
         ivPreview?.setImageBitmap(bmp)
         ComputeThread(bmp).start()
@@ -50,6 +55,7 @@ class ComputeShaderActivity : AppCompatActivity() {
     private inner class ComputeThread(val bmp: Bitmap) : Thread("ComputeThread") {
 
         private var acBuffer = 0
+        private var texSrc = 0
         private val width = 100
         private val height = 100
 
@@ -88,13 +94,18 @@ class ComputeShaderActivity : AppCompatActivity() {
             val program = GLES31.glCreateProgram()
             // compile shader
             val shader = GlUtil.loadShader(GLES31.GL_COMPUTE_SHADER, AssetsUtil.loadShaderString(App.context, "compute/main.glsl"))
+            GlUtil.checkGlError("compile compute shader")
             // attach shader
             GLES31.glAttachShader(program, shader)
             // link
             GLES31.glLinkProgram(program)
             // use program
             GLES31.glUseProgram(program)
+            // bind texture
+            GLES31.glBindImageTexture(0, texSrc, 0, false, 0, GLES31.GL_READ_ONLY, GLES31.GL_RGBA32F)
+            // bind atomic counter
             GLES31.glBindBufferBase(GLES31.GL_ATOMIC_COUNTER_BUFFER, 1, acBuffer)
+            // dispatch compute
             GLES31.glDispatchCompute(5, 5, 1)
             // end program
             GLES31.glBindBufferBase(GLES31.GL_ATOMIC_COUNTER_BUFFER, 1, 0)
@@ -148,7 +159,26 @@ class ComputeShaderActivity : AppCompatActivity() {
         }
 
         private fun createSrcTexture() {
+            val textures = intArrayOf(1)
+            GLES31.glGenTextures(1, textures, 0)
+            texSrc = textures[0]
+            GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, textures[0])
+            GLES31.glTexStorage2D(GLES31.GL_TEXTURE_2D, 1, GLES31.GL_RGBA32F, bmp.width, bmp.height)
+            GLES31.glTexParameteri(GLES31.GL_TEXTURE_2D, GLES31.GL_TEXTURE_MIN_FILTER, GLES31.GL_LINEAR)
+            GLES31.glTexParameteri(GLES31.GL_TEXTURE_2D, GLES31.GL_TEXTURE_MAG_FILTER, GLES31.GL_LINEAR)
+            GLES31.glTexParameteri(GLES31.GL_TEXTURE_2D, GLES31.GL_TEXTURE_WRAP_S, GLES31.GL_CLAMP_TO_EDGE)
+            GLES31.glTexParameteri(GLES31.GL_TEXTURE_2D, GLES31.GL_TEXTURE_WRAP_T, GLES31.GL_CLAMP_TO_EDGE)
 
+            val buffer = ByteBuffer.allocateDirect(bmp.width * bmp.height * 4).apply {
+                order(ByteOrder.LITTLE_ENDIAN)
+            }
+            bmp.copyPixelsToBuffer(buffer)
+            buffer.rewind()
+            GLES31.glTexSubImage2D(GLES31.GL_TEXTURE_2D, 0, 0, 0, bmp.width, bmp.height, GLES31.GL_RGBA, GLES31.GL_FLOAT, buffer)
+//            GLUtils.texSubImage2D(GLES31.GL_TEXTURE_2D, 0, 0, 0, bmp)
+
+            GlUtil.checkGlError("tex image 2D $texSrc")
+            GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, 0)
         }
 
         private fun createAtomicCounterBuffer() {
@@ -167,12 +197,12 @@ class ComputeShaderActivity : AppCompatActivity() {
             GLES31.glReadPixels(0, 0, width, height, GLES31.GL_RGBA, GLES31.GL_UNSIGNED_BYTE, buf)
             GlUtil.checkGlError("glReadPixels")
             buf.rewind()
-            val bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).apply {
+            val result = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).apply {
                 copyPixelsFromBuffer(buf)
             }
-//            uiHandler.post {
-//                ivPreview?.setImageBitmap(bmp)
-//            }
+            uiHandler.post {
+                ivPreview?.setImageBitmap(result)
+            }
         }
     }
 }
