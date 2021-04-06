@@ -17,4 +17,10 @@
         android:layout_height="wrap_content"
         android:text="Compute Shader Demo"
         android:onClick="gotoComputeShader" />
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Obj Viewer"
+        android:onClick="gotoObjViewer" />
 </LinearLayout>

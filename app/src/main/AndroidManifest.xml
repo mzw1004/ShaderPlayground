@@ -19,6 +19,6 @@
         </activity>
         <activity android:name=".ui.ComputeShaderActivity" />
         <activity android:name=".ui.AtomicCounterUsageActivity" />
+        <activity android:name=".ui.ObjViewerActivity" />
     </application>
-
 </manifest>

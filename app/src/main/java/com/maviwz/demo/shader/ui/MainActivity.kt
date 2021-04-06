@@ -30,4 +30,10 @@ class MainActivity : AppCompatActivity() {
             startActivity(this)
         }
     }
+
+    fun gotoObjViewer(view: View) {
+        Intent(this, ObjViewerActivity::class.java).apply {
+            startActivity(this)
+        }
+    }
 }
