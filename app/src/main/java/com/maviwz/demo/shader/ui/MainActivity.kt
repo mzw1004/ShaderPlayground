@@ -36,4 +36,10 @@ class MainActivity : AppCompatActivity() {
             startActivity(this)
         }
     }
+
+    fun gotoStencilTesting(view: View) {
+        Intent(this, StencilTestingActivity::class.java).apply {
+            startActivity(this)
+        }
+    }
 }

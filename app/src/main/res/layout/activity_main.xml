@@ -23,4 +23,10 @@
         android:layout_height="wrap_content"
         android:text="Obj Viewer"
         android:onClick="gotoObjViewer" />
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Stencil Testing"
+        android:onClick="gotoStencilTesting" />
 </LinearLayout>

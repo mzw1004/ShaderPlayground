@@ -20,5 +20,6 @@
         <activity android:name=".ui.ComputeShaderActivity" />
         <activity android:name=".ui.AtomicCounterUsageActivity" />
         <activity android:name=".ui.ObjViewerActivity" />
+        <activity android:name=".ui.StencilTestingActivity" />
     </application>
 </manifest>

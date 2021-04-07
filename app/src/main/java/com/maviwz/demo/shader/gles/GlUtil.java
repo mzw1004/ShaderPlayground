@@ -24,6 +24,7 @@ import android.util.Log;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
 
 /**
@@ -41,6 +42,7 @@ public class GlUtil {
 
     private static final int SIZEOF_FLOAT = 4;
     private static final int SIZEOF_SHORT = 2;
+    private static final int SIZEOF_INT = 4;
 
     private GlUtil() {}     // do not instantiate
 
@@ -178,10 +180,20 @@ public class GlUtil {
      * Allocates a direct short buffer, and populates it with the short array data.
      */
     public static ShortBuffer createShortBuffer(short[] coords) {
-        // Allocate a direct ByteBuffer, using 4 bytes per float, and copy coords into it.
+        // Allocate a direct ByteBuffer, using 2 bytes per short, and copy coords into it.
         ByteBuffer bb = ByteBuffer.allocateDirect(coords.length * SIZEOF_SHORT);
         bb.order(ByteOrder.nativeOrder());
         ShortBuffer sb = bb.asShortBuffer();
+        sb.put(coords);
+        sb.position(0);
+        return sb;
+    }
+
+    public static IntBuffer createIntBuffer(int[] coords) {
+        // Allocate a direct ByteBuffer, using 4 bytes per int, and copy coords into it.
+        ByteBuffer bb = ByteBuffer.allocateDirect(coords.length * SIZEOF_INT);
+        bb.order(ByteOrder.nativeOrder());
+        IntBuffer sb = bb.asIntBuffer();
         sb.put(coords);
         sb.position(0);
         return sb;
