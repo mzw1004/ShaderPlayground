@@ -92,6 +92,12 @@ class StencilTestingActivity : AppCompatActivity() {
             eyePosition[0] = 2 * sin(time/1000f)
             eyePosition[2] = -2 * cos(time/1000f)
             camera.lookAt(eyePosition[0], eyePosition[1], eyePosition[2], 0f, 0f, 0f, 0f, 1f, 0f)
+            GLES30.glEnable(GLES30.GL_STENCIL_TEST)
+            drawCube()
+            GLES30.glDisable(GLES30.GL_STENCIL_TEST)
+        }
+
+        private fun drawCube() {
             drawFront()
             drawLeft()
             drawRight()

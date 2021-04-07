@@ -8,8 +8,9 @@ out vec4 outColor;
 void main() {
     vec3 view = -v_Position;
     float v = dot(view, v_Normal);
-    if (v > 0.) {
+    if (v > 0. && v_Normal.x < 0.) {
         discard;
+    } else {
+        outColor = vec4(u_Color, 1.);
     }
-    outColor = vec4(u_Color, 1.);
 }
