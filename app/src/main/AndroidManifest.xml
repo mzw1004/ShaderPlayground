@@ -21,5 +21,6 @@
         <activity android:name=".ui.AtomicCounterUsageActivity" />
         <activity android:name=".ui.ObjViewerActivity" />
         <activity android:name=".ui.StencilTestingActivity" />
+        <activity android:name=".ui.ParticleActivity" />
     </application>
 </manifest>

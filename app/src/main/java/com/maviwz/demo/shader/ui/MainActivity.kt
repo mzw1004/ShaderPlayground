@@ -42,4 +42,10 @@ class MainActivity : AppCompatActivity() {
             startActivity(this)
         }
     }
+
+    fun gotoParticle(view: View) {
+        Intent(this, ParticleActivity::class.java).apply {
+            startActivity(this)
+        }
+    }
 }
